@@ -1,29 +1,50 @@
 SRC_DIR = src
 INC_DIR = include
 OBJ_DIR = $(BUILD_DIR)/obj/kernel
+DRIVERS_OBJ_DIR = $(BUILD_DIR)/obj/drivers
 
 KERNEL_NAME = kafka-kernel-$(ARCH)
 KERNEL_BIN = $(BUILD_DIR)/$(KERNEL_NAME)
 
-SRCS = $(wildcard $(SRC_DIR)/*.cpp)
-OBJS = $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRCS))
+CPP_SRCS = $(shell find $(SRC_DIR) -type f -name "*.cpp")
+C_SRCS = $(shell find $(SRC_DIR) -type f -name "*.c")
 
-INCLUDES = -I$(INC_DIR)
+CPP_OBJS = $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/$(ARCH)-%.o,$(CPP_SRCS))
+C_OBJS = $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/$(ARCH)-%.o,$(C_SRCS))
+
+OBJS = $(CPP_OBJS) $(C_OBJS)
+
+DRIVER_OBJS = $(shell find $(DRIVERS_OBJ_DIR) -name "$(ARCH)-*.o")
+
+INCLUDES = -I$(INC_DIR) -I$(PUB_INCLUDE_DIR)
 LDFLAGS = -T $(CURDIR)/../arch/$(ARCH)/linker.ld -nostdlib
 
 $(shell mkdir -p $(OBJ_DIR))
 
 all: $(KERNEL_BIN)
 
-$(KERNEL_BIN): $(OBJS)
+$(KERNEL_BIN): $(OBJS) driver_objs
 	@echo "Linking kernel..."
-	@$(LD) $(LDFLAGS) -o $@ $^
+	@$(LD) $(LDFLAGS) -o $@ $(OBJS) $(DRIVER_OBJS)
 
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
+driver_objs:
+	@echo "Checking for driver objects..."
+	@if [ ! -d "$(DRIVERS_OBJ_DIR)" ]; then \
+		echo "Driver objects directory not found!"; \
+		exit 1; \
+	fi
+
+$(OBJ_DIR)/$(ARCH)-%.o: $(SRC_DIR)/%.cpp
 	@echo "Compiling $<..."
+	@mkdir -p $(dir $@)
 	@$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
-clean:
-	@rm -rf $(OBJ_DIR) $(KERNEL_BIN)
+$(OBJ_DIR)/$(ARCH)-%.o: $(SRC_DIR)/%.c
+	@echo "Compiling $<..."
+	@mkdir -p $(dir $@)
+	@$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
-.PHONY: all clean
+clean:
+	@rm -rf $(OBJ_DIR)/$(ARCH)-* $(KERNEL_BIN)
+
+.PHONY: all clean driver_objs
