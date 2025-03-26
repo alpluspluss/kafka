@@ -20,47 +20,50 @@
 #	define ATOMIC_BUILTIN(name) __atomic_##name##_n
 #endif
 
-/* C++11 memory orders; we need only a subset of them */
-enum class MemoryOrder 
+namespace kfk
 {
-    ACQUIRE = __ATOMIC_ACQUIRE, /* acquire order */
-    RELEASE = __ATOMIC_RELEASE, /* release order */
-    SEQCST = __ATOMIC_SEQ_CST /* sequentially consistent memory ordering; also the default if unspecified  */
-};
-
-/* the atomic class; a subset of `std::atomic` */
-template<typename T>
-class Atomic
-{
-public:
-    constexpr Atomic(T init) : value(init) {}
-
-    /* atomically load with the specified memory order */
-    T load(MemoryOrder order = MemoryOrder::SEQCST)
+    /* C++11 memory orders; we need only a subset of them */
+    enum class MemoryOrder 
     {
-        return ATOMIC_BUILTIN(load)(&value, static_cast<int>(order));
-    }
+        ACQUIRE = __ATOMIC_ACQUIRE, /* acquire order */
+        RELEASE = __ATOMIC_RELEASE, /* release order */
+        SEQCST = __ATOMIC_SEQ_CST /* sequentially consistent memory ordering; also the default if unspecified  */
+    };
 
-    void store(T v, MemoryOrder order = MemoryOrder::SEQCST)
+    /* the atomic class; a subset of `std::atomic` */
+    template<typename T>
+    class Atomic
     {
-        return ATOMIC_BUILTIN(store)(&value, v, static_cast<int>(order));
-    }
+    public:
+        constexpr Atomic(T init) : value(init) {}
 
-    T exchange(T v, MemoryOrder order = MemoryOrder::SEQCST)
-    {
-        return ATOMIC_BUILTIN(exchange)(&value, v, static_cast<int>(order));
-    }
+        /* atomically load with the specified memory order */
+        T load(MemoryOrder order = MemoryOrder::SEQCST)
+        {
+            return ATOMIC_BUILTIN(load)(&value, static_cast<int>(order));
+        }
 
-    bool compare_exchange(T& expected, T desired, MemoryOrder order = MemoryOrder::SEQCST)
-    {
+        void store(T v, MemoryOrder order = MemoryOrder::SEQCST)
+        {
+            return ATOMIC_BUILTIN(store)(&value, v, static_cast<int>(order));
+        }
+
+        T exchange(T v, MemoryOrder order = MemoryOrder::SEQCST)
+        {
+            return ATOMIC_BUILTIN(exchange)(&value, v, static_cast<int>(order));
+        }
+
+        bool compare_exchange(T& expected, T desired, MemoryOrder order = MemoryOrder::SEQCST)
+        {
 #if __has_builtin(__c11_atomic_compare_exchange_strong)
-        return __c11_atomic_compare_exchange_strong(&value, &expected, desired, order, static_cast<int>(order));
+            return __c11_atomic_compare_exchange_strong(&value, &expected, desired, order, static_cast<int>(order));
 #else
-        return __atomic_compare_exchange_n(&value, &expected, desired, true, order, static_cast<int>(order));
+            return __atomic_compare_exchange_n(&value, &expected, desired, true, order, static_cast<int>(order));
 #endif
-    }
+        }
 
-private:
-    _Atomic(T) value;
+    private:
+        _Atomic(T) value;
 
-};
+    };
+}

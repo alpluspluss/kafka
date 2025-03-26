@@ -31,16 +31,19 @@ $(shell mkdir -p $(BUILD_DIR)/obj/kernel)
 $(shell mkdir -p $(BUILD_DIR)/obj/drivers)
 $(shell mkdir -p $(CONFIG_DIR))
 
-all: configure driver kernel
+all: configure arch driver kernel
 
-# Build drivers first
 driver: configure
 	@echo "Building drivers for $(ARCH) architecture..."
 	@$(MAKE) -C drivers
 	@echo "Drivers build complete."
 
-# Build kernel after drivers
-kernel: configure driver
+arch:
+	@echo "Building architecture-specific library..."
+	@$(MAKE) -C arch
+	@echo "Architecture build complete."
+
+kernel: configure arch driver
 	@echo "Building kernel for $(ARCH) architecture..."
 	@$(MAKE) -C kernel
 	@echo "Kernel build complete."
@@ -76,7 +79,8 @@ endif
 
 configure:
 	@echo "Generating compile_commands.json..."
-	@compiledb -o $(BUILD_DIR)/compile_commands.json -n make -C kernel
+	@cd $(shell pwd) && compiledb -n make arch driver kernel
+	@mv compile_commands.json $(BUILD_DIR)/compile_commands.json
 
 build: kernel iso
 
@@ -87,4 +91,4 @@ clean:
 	@rm -rf $(BUILD_DIR) iso_root
 	@echo "Clean complete."
 
-.PHONY: all driver kernel iso run configure build clean
+.PHONY: all arch driver kernel iso run configure build clean

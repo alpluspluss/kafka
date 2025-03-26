@@ -1,3 +1,4 @@
+/* this file is a spart of Kafka kernel which is under MIT license; see LICENSE for more info */
 /*
  * static implementation of __cxa_atexit and __cxa_finalize for the Kafka kernel
  * note: may later be re-implemented; need mutex/thread synchronization

@@ -1,6 +1,6 @@
-SRC_DIR = src
-INC_DIR = include
-OBJ_DIR = $(BUILD_DIR)/obj/drivers
+SRC_DIR = $(ARCH)/src
+INC_DIR = $(ARCH)/include
+OBJ_DIR = $(BUILD_DIR)/obj/arch-$(ARCH)
 
 SRCS = $(shell find $(SRC_DIR) -type f -name "*.cpp")
 OBJS = $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/$(ARCH)-%.o,$(SRCS))

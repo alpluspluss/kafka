@@ -1,3 +1,5 @@
+/* this file is a spart of Kafka kernel which is under MIT license; see LICENSE for more info */
+
 void __cxa_finalize(void* d);
 
 extern void* __dso_handle;
