@@ -1,21 +1,14 @@
-# Kafka Kernel - Main Makefile
-# Architecture configuration
 ARCH ?= x86_64
 
-# Toolchain configuration
 CC = clang
 CXX = clang++
 LD = ld.lld
 
-# Directory configuration
 BUILD_DIR = $(shell pwd)/build
 LIMINE_DIR = /usr/local/share/limine
 CONFIG_DIR = $(BUILD_DIR)/config
 
-# Common compiler flags
 COMMON_FLAGS = -ffreestanding -O3
-
-# Architecture-specific configuration
 ifeq ($(ARCH),x86_64)
     TARGET = x86_64-none-elf
     ARCH_FLAGS = -march=x86-64-v3 
@@ -42,32 +35,32 @@ kernel: configure
 
 iso: kernel
 	@echo "Creating bootable ISO..."
-	@mkdir -p iso_root/boot/limine
-	@cp $(KERNEL_BIN) iso_root/boot/kernel
-	@cp boot/limine.conf iso_root/boot
-	@cp boot/wallpaper.png iso_root/boot
-	@cp $(LIMINE_DIR)/limine-bios-cd.bin iso_root/boot/limine/
-	@cp $(LIMINE_DIR)/limine-uefi-cd.bin iso_root/boot/limine/
-	@cp $(LIMINE_DIR)/limine-bios.sys iso_root/boot/limine/
-	@mkdir -p iso_root/EFI/BOOT
-	@cp $(LIMINE_DIR)/BOOTX64.EFI iso_root/EFI/BOOT/
+	@mkdir -p $(BUILD_DIR)/iso_root/boot/limine
+	@cp $(KERNEL_BIN) $(BUILD_DIR)/iso_root/boot/kernel
+	@cp boot/limine.conf $(BUILD_DIR)/iso_root/boot
+	@cp boot/wallpaper.png $(BUILD_DIR)/iso_root/boot
+	@cp $(LIMINE_DIR)/limine-bios-cd.bin $(BUILD_DIR)/iso_root/boot/limine/
+	@cp $(LIMINE_DIR)/limine-uefi-cd.bin $(BUILD_DIR)/iso_root/boot/limine/
+	@cp $(LIMINE_DIR)/limine-bios.sys $(BUILD_DIR)/iso_root/boot/limine/
+	@mkdir -p $(BUILD_DIR)/iso_root/EFI/BOOT
+	@cp $(LIMINE_DIR)/BOOTX64.EFI $(BUILD_DIR)/iso_root/EFI/BOOT/
 	@xorriso -as mkisofs -R -r -J \
 		-b boot/limine/limine-bios-cd.bin \
 		-no-emul-boot -boot-load-size 4 -boot-info-table -hfsplus \
 		-apm-block-size 2048 \
 		--efi-boot boot/limine/limine-uefi-cd.bin \
 		-efi-boot-part --efi-boot-image --protective-msdos-label \
-		iso_root -o $(BUILD_DIR)/kafka-$(ARCH).iso
+		$(BUILD_DIR)/iso_root -o $(BUILD_DIR)/kafka-$(ARCH).iso
 	@limine bios-install $(BUILD_DIR)/kafka-$(ARCH).iso
 	@echo "ISO creation complete: $(BUILD_DIR)/kafka-$(ARCH).iso"
 
 run: iso
 	@echo "Running kernel in QEMU..."
-	@qemu-system-$(ARCH) -m 2G -cdrom $(BUILD_DIR)/kafka-$(ARCH).iso
+	@qemu-system-$(ARCH) -m 2G $(BUILD_DIR)/kafka-$(ARCH).iso
 
 configure:
 	@echo "Generating compile_commands.json..."
-	@compiledb -n make -C kernel
+	@compiledb -o $(BUILD_DIR)/compile_commands.json -n make -C kernel
 
 build: kernel iso
 
