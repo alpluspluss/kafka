@@ -1,5 +1,4 @@
-/* this file is a part of Kafka kernel which is under MIT license; see LICENSE
- * for more info */
+/* this file is a part of Kafka kernel which is under MIT license; see LICENSE for more info */
 /*
  * C++ implementation of __cxa_atexit and __cxa_finalize for the Kafka kernel
  * optimized with better memory ordering and spinlock backoff

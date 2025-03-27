@@ -39,21 +39,16 @@ extern "C" void kernel_main()
 
     uint64_t hhdm_offset = hhdm_request.response->offset;
     if (!hhdm_offset)
-        goto cooked;
+        kfk::cpu::halt();
 
     /* early init */
     kfk::pmm::init(&memmap_request, hhdm_offset);
     kfk::vmm::init(hhdm_offset);
-    kfk::Heap::init();
-
+    kfk::heap::init();
+    
     kfk::cpu::init(hhdm_offset);
     kfk::interrupt::init();
 
     kfk::cpu::pause();
-
-cooked: /* 
-         * all error handling that relates to intialization should be here; 
-         * this reduces some code boilerplates
-         */
     kfk::cpu::halt();
 }
