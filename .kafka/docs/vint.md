@@ -10,6 +10,7 @@ The system uses a 16-bit virtual interrupt numbering scheme that maps conceptual
 architecture-specific mechanisms. These are organized into logical categories.
 
 | Category Range | Description            | Examples                          |
+| -------------- | ---------------------- | --------------------------------- |
 | 0x0000-0x00FF  | Synchronous Exceptions | Page faults, divide-by-zero       |
 | 0x0100-0x01FF  | Hardware Interrupts    | Timer, keyboard, storage          | 
 | 0x0200-0x02FF  | Software Interrupts    | System calls                      |
@@ -39,6 +40,7 @@ struct interrupt_traits
 ### x86_64
 
 | Virtual                 | Interrupt x86_64 | Vector Description      |
+| ----------------------- | ---------------- | ----------------------- |
 | EXCEPTION_DIVIDE_ERROR  | 0                | Division by zero        |
 | EXCEPTION_DEBUG         | 1                | Debug exception         |
 | EXCEPTION_NMI           | 2                | Non-maskable interrupt  | 
@@ -54,6 +56,7 @@ struct interrupt_traits
 ## Common Virtual Interrupts
 
 | Virtual ID     | Description                | x86_64 Vector  |
+| -------------- | -------------------------- | -------------- |
 | 0x0000         | EXCEPTION_DIVIDE_ERROR     | 0              |
 | 0x0001         | EXCEPTION_DEBUG            | 1              | 
 | 0x0002         | EXCEPTION_NMI              | 2              |
@@ -65,6 +68,7 @@ struct interrupt_traits
 ## Hardware Interrupts
 
 | Virtual ID     | Description       | x86_64 Vector  |
+| -------------- | ----------------- | -------------- |
 | 0x0100         | IRQ_TIMER         | 32             |
 | 0x0101         | IRQ_KEYBOARD      | 33             | 
 | 0x0104         | IRQ_COM1          | 36             |
@@ -75,6 +79,7 @@ struct interrupt_traits
 ## Software Interrupts
 
 | Virtual ID     | Description     | x86_64 Vector   |
+| -------------- | --------------- | --------------- |
 | 0x0200         | SYSCALL         | 128             |
 
 ## Some examples
