@@ -1,10 +1,10 @@
-/* this file is a spart of Kafka kernel which is under MIT license; see LICENSE for more info */
+/* this file is a part of Kafka kernel which is under MIT license; see LICENSE for more info */
 
 #include <stdint.h>
+#include <kafka/X86cpu.hpp>
 #include <kafka/gdt.hpp>
 #include <kafka/tss.hpp>
 #include <kafka/types.hpp>
-#include <kafka/X86cpu.hpp>
 
 namespace kfk
 {

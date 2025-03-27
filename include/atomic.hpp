@@ -1,3 +1,5 @@
+/* this file is a part of Kafka kernel which is under MIT license; see LICENSE for more info */
+
 #pragma once
 
 #ifndef __has_builtin
@@ -35,7 +37,7 @@ namespace kfk
     class Atomic
     {
     public:
-        constexpr Atomic(T init) : value(init) {}
+        constexpr explicit Atomic(T init) : value(init) {}
 
         /* atomically load with the specified memory order */
         T load(MemoryOrder order = MemoryOrder::SEQCST)
