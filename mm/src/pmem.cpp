@@ -196,23 +196,13 @@ namespace kfk
                 region_count++;
             }
 
-            if (size < PAGE_SIZE) 
+            /* `CACHE_LINE` should be elsewhere; maybe use <kafka/hwinfo> to query once the header is completed */
+            constexpr size_t CACHE_LINE = 64;
+            auto *ptr = reinterpret_cast<volatile uint8_t *>(alloc_base + hhdm_offset);
+            for (size_t offset = 0; offset < size; offset += CACHE_LINE)
             {
-                auto *ptr = reinterpret_cast<volatile uint64_t *>(alloc_base + hhdm_offset);
-                    for (size_t j = 0; j < size / sizeof(uint64_t); j++)
-                        ptr[j] = 0;
-            }
-            else 
-            {
-                /* tbh this should actually be defined somewhere lol */
-                /* TODO: use hwinfo when it is ready */
-                constexpr size_t CACHE_LINE = 64;
-				auto *ptr = reinterpret_cast<volatile uint8_t *>(alloc_base + hhdm_offset);
-				for (size_t offset = 0; offset < size; offset += CACHE_LINE)
-				{
-					for (size_t i = 0; i < CACHE_LINE && offset + i < size; i++)
-						ptr[offset + i] = 0;
-				}
+                for (size_t i = 0; i < CACHE_LINE && offset + i < size; i++)
+                    ptr[offset + i] = 0;
             }
             return alloc_base;
         }
@@ -224,6 +214,7 @@ namespace kfk
     {
         const size_t size = n * PAGE_SIZE;
 
+        /* find the region containing this base address */
         /* TODO: switch to kfk::lower_bound(); once we have the kernel std */
 		size_t left = 0, right = region_count - 1;
 		size_t i = region_count;
@@ -245,24 +236,52 @@ namespace kfk
 			}
 		}
 
-		if (i < region_count && regions[i].len == size)
-		{
-			regions[i].is_free = true;
-			if (i > 0 && regions[i - 1].is_free) /* merge prev */
-			{
-				regions[i - 1].len += regions[i].len;
-				memmove(&regions[i], &regions[i + 1], (region_count - i - 1) * sizeof(Region));
-				region_count--;
-				i--;
-			}
+        if (i < region_count && !regions[i].is_free)
+        {
+            /* exact size match: mark entire region as free */
+            if (regions[i].len == size)
+            {
+                regions[i].is_free = true;
+            }
+            
+            else if (size < regions[i].len) /* partial freeing */
+            {
+                /* check if we have space for a new region */
+                if (region_count >= MAX_REGIONS)
+                    return;
+                    
+                /* make room for a new region */
+                memmove(&regions[i + 1], &regions[i], (region_count - i) * sizeof(Region));
+                region_count++;
+                
+                /* split the region */
+                regions[i + 1].base = base + size;
+                regions[i + 1].len = regions[i].len - size;
+                regions[i + 1].is_free = false;
+                
+                regions[i].len = size;
+                regions[i].is_free = true;
+            }
+            else /* ignore; trying to free more than what's allocated */
+            {
+                return;
+            }
+            
+            /* try to merge with adjacent free regions */
+            if (i > 0 && regions[i - 1].is_free) /* merge with prev */
+            {
+                regions[i - 1].len += regions[i].len;
+                memmove(&regions[i], &regions[i + 1], (region_count - i - 1) * sizeof(Region));
+                region_count--;
+                i--;
+            }
 
-			if (i < region_count - 1 && regions[i + 1].is_free) /* merge next */
-			{
-				regions[i].len += regions[i + 1].len;
-				memmove(&regions[i + 1], &regions[i + 2], (region_count - i - 2) * sizeof(Region));
-				region_count--;
-			}
-			return;
-		}
+            if (i < region_count - 1 && regions[i + 1].is_free) /* merge with next */
+            {
+                regions[i].len += regions[i + 1].len;
+                memmove(&regions[i + 1], &regions[i + 2], (region_count - i - 2) * sizeof(Region));
+                region_count--;
+            }
+        }
     }
 }
