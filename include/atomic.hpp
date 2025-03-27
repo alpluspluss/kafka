@@ -56,9 +56,9 @@ namespace kfk
         bool compare_exchange(T& expected, T desired, MemoryOrder order = MemoryOrder::SEQCST)
         {
 #if __has_builtin(__c11_atomic_compare_exchange_strong)
-            return __c11_atomic_compare_exchange_strong(&value, &expected, desired, order, static_cast<int>(order));
+            return __c11_atomic_compare_exchange_strong(&value, &expected, desired, static_cast<int>(order), static_cast<int>(order));
 #else
-            return __atomic_compare_exchange_n(&value, &expected, desired, true, order, static_cast<int>(order));
+            return __atomic_compare_exchange_n(&value, &expected, desired, true, static_cast<int>(order), static_cast<int>(order));
 #endif
         }
 

@@ -1,8 +1,8 @@
 /* this file is a spart of Kafka kernel which is under MIT license; see LICENSE for more info */
 
 #include <limine.h>
-#include <atomic.hpp>
 #include <kafka/hal/cpu.hpp>
+#include <kafka/hal/interrupt.hpp>
 
 namespace
 {
@@ -23,5 +23,7 @@ extern "C" void kernel_main()
         kfk::cpu::halt();
 
     kfk::cpu::init(&hhdm_request);
+    kfk::interrupt::init();
+    kfk::cpu::pause();
     kfk::cpu::halt();
 }

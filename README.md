@@ -21,7 +21,7 @@ on monolithic kernels while microkernels sometimes introduce too many boundaries
 some sort of "development barriers" for OSDev as it has a very steep learning curve. 
 
 "Stereo" kernels aim to solve this by reducing the insanity of these pain points that can come and
-bite us back later, just like how RISC CPU architecture manages to solves CISC's issues regarding
+bite us back later, just like how RISC CPU architecture manages to solve CISC's issues regarding
 similar problems.
 
 ## Status

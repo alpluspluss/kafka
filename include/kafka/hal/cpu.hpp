@@ -16,6 +16,8 @@ namespace kfk
 
         /* CPU utils */
         [[noreturn]] static void halt() noexcept;
+
+        static void pause() noexcept;
     };
 
     using cpu = cpu_traits<current_arch>;
