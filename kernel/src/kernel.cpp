@@ -1,7 +1,9 @@
 /* this file is a spart of Kafka kernel which is under MIT license; see LICENSE for more info */
 
 #include <limine.h>
+#include <kafka/pmem.hpp>
 #include <kafka/hal/cpu.hpp>
+#include <kafka/hal/vmem.hpp>
 #include <kafka/hal/interrupt.hpp>
 
 namespace
@@ -15,6 +17,18 @@ namespace
         .revision = 0,
         .response = nullptr
     };
+
+    __attribute__((used, section(".limine_requests")))
+    volatile limine_memmap_request memmap_request = {
+        .id = LIMINE_MEMMAP_REQUEST,
+        .response = nullptr
+    };
+
+    __attribute__((used, section(".limine_requests_start")))
+    volatile LIMINE_REQUESTS_START_MARKER;
+
+    __attribute__((used, section(".limine_requests_end")))
+    volatile LIMINE_REQUESTS_END_MARKER;
 }
 
 extern "C" void kernel_main()
@@ -26,9 +40,14 @@ extern "C" void kernel_main()
     if (!hhdm_offset)
         goto cooked;
 
-    kfk::cpu::init(hhdm_offset);
+    /* memory */
+    kfk::pmm::init(&memmap_request, hhdm_offset);
+    kfk::vmm::init(hhdm_offset);
 
+    /* early init */
+    kfk::cpu::init(hhdm_offset);
     kfk::interrupt::init();
+
     kfk::cpu::pause();
 
 cooked: /* 
