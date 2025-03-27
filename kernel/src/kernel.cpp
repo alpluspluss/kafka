@@ -22,8 +22,18 @@ extern "C" void kernel_main()
     if (LIMINE_BASE_REVISION_SUPPORTED == false)
         kfk::cpu::halt();
 
-    kfk::cpu::init(&hhdm_request);
+    uint64_t hhdm_offset = hhdm_request.response->offset;
+    if (!hhdm_offset)
+        goto cooked;
+
+    kfk::cpu::init(hhdm_offset);
+
     kfk::interrupt::init();
     kfk::cpu::pause();
+
+cooked: /* 
+         * all error handling that relates to intialization should be here; 
+         * this reduces some code boilerplates
+         */
     kfk::cpu::halt();
 }

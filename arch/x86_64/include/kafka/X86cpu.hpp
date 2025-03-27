@@ -1,4 +1,4 @@
-/* this file is a spart of Kafka kernel which is under MIT license; see LICENSE for more info */
+/* this file is a part of Kafka kernel which is under MIT license; see LICENSE for more info */
 
 #pragma once
 
@@ -11,7 +11,7 @@ namespace kfk
     class cpu_traits<x86_64>
     {
 	public:
-        static void init(volatile limine_hhdm_request* hhdm) noexcept;
+        static void init(uint64_t offset) noexcept;
 
 		/* CPU utils */
 		[[noreturn]] static void halt() noexcept;

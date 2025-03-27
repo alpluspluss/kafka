@@ -31,17 +31,22 @@ $(shell mkdir -p $(BUILD_DIR)/obj/kernel)
 $(shell mkdir -p $(BUILD_DIR)/obj/drivers)
 $(shell mkdir -p $(CONFIG_DIR))
 
-all: configure arch driver kernel
+all: configure mm arch driver kernel
 
-driver: configure
-	@echo "Building drivers for $(ARCH) architecture..."
-	@$(MAKE) -C drivers
-	@echo "Drivers build complete."
+mm: configure
+	@echo "Building memory management subsystem"
+	@$(MAKE) -C mm
+	@echo "Memory management subsystem complete."
 
-arch:
-	@echo "Building architecture-specific library..."
+arch: configure drivers
+	@echo "Building architecture-specific subsystem..."
 	@$(MAKE) -C arch
 	@echo "Architecture build complete."
+
+driver: configure mm
+	@echo "Building device drivers subsystem for $(ARCH) architecture..."
+	@$(MAKE) -C drivers
+	@echo "Drivers build complete."
 
 kernel: configure arch driver
 	@echo "Building kernel for $(ARCH) architecture..."
@@ -91,4 +96,4 @@ clean:
 	@rm -rf $(BUILD_DIR) iso_root
 	@echo "Clean complete."
 
-.PHONY: all arch driver kernel iso run configure build clean
+.PHONY: all mm arch driver kernel iso run configure build clean
