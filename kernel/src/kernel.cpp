@@ -1,6 +1,7 @@
 /* this file is a spart of Kafka kernel which is under MIT license; see LICENSE for more info */
 
 #include <limine.h>
+#include <kafka/heap.hpp>
 #include <kafka/pmem.hpp>
 #include <kafka/hal/cpu.hpp>
 #include <kafka/hal/vmem.hpp>
@@ -40,11 +41,11 @@ extern "C" void kernel_main()
     if (!hhdm_offset)
         goto cooked;
 
-    /* memory */
+    /* early init */
     kfk::pmm::init(&memmap_request, hhdm_offset);
     kfk::vmm::init(hhdm_offset);
+    kfk::Heap::init();
 
-    /* early init */
     kfk::cpu::init(hhdm_offset);
     kfk::interrupt::init();
 
