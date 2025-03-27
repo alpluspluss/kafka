@@ -48,10 +48,10 @@ namespace kfk
 		);
 	}
 
-    void cpu_traits<x86_64>::init(volatile limine_hhdm_request *hhdm) noexcept
+    void cpu_traits<x86_64>::init(uint64_t offset) noexcept
     {
         /* save hhdm offset */
-        hhdm_offset = hhdm->response->offset;
+        hhdm_offset = offset;
 
         /* load GDT */
         asm volatile("lgdt %0" : : "m"(gdtr)); /* flush */
