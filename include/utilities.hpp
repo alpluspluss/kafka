@@ -27,4 +27,12 @@ namespace kfk
                      "cannot forward an rvalue as an lvalue");
         return static_cast<T&&>(t);
     }
+
+    template<typename T>
+    constexpr void swap(T& a, T& b) noexcept
+    {
+        T temp = static_cast<T&&>(a);
+        a = static_cast<T&&>(b);
+        b = static_cast<T&&>(temp);
+    }
 }
