@@ -1,4 +1,4 @@
-/* this file is a spart of Kafka kernel which is under MIT license; see LICENSE for more info */
+/* this file is a part of Kafka kernel which is under MIT license; see LICENSE for more info */
 
 #include <kafka/X86interrupt.hpp>
 #include <kafka/hal/cpu.hpp>
