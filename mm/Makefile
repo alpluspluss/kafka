@@ -5,7 +5,7 @@ OBJ_DIR = $(BUILD_DIR)/obj/mm
 SRCS = $(shell find $(SRC_DIR) -type f -name "*.cpp")
 OBJS = $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/$(ARCH)-%.o,$(SRCS))
 
-INCLUDES = -I$(INC_DIR) -I$(PUB_INCLUDE_DIR)
+INCLUDES = -I$(INC_DIR) -I$(PUB_INCLUDE_DIR) -I$(MM_INCLUDE_DIR)
 CXXFLAGS += $(INCLUDES)
 
 $(shell mkdir -p $(OBJ_DIR))

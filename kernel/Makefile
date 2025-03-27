@@ -1,6 +1,7 @@
 SRC_DIR = src
 INC_DIR = include
 OBJ_DIR = $(BUILD_DIR)/obj/kernel
+
 DRIVERS_OBJ_DIR = $(BUILD_DIR)/obj/drivers
 ARCH_LIB_OBJ_DIR = $(BUILD_DIR)/obj/arch-$(ARCH)
 MM_OBJ_DIR = $(BUILD_DIR)/obj/mm
@@ -20,7 +21,7 @@ MM_OBJS = $(shell find $(MM_OBJ_DIR) -name "$(ARCH)-*.o")
 ARCH_OBJS = $(shell find $(ARCH_LIB_OBJ_DIR) -name "$(ARCH)-*.o")
 DRIVER_OBJS = $(shell find $(DRIVERS_OBJ_DIR) -name "$(ARCH)-*.o")
 
-INCLUDES = -I$(INC_DIR) -I$(PUB_INCLUDE_DIR)
+INCLUDES = -I$(INC_DIR) -I$(PUB_INCLUDE_DIR) -I$(MM_INCLUDE_DIR)
 LDFLAGS = -T $(CURDIR)/../arch/$(ARCH)/linker.ld -nostdlib
 
 $(shell mkdir -p $(OBJ_DIR))

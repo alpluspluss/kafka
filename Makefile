@@ -5,7 +5,10 @@ CXX = clang++
 LD = ld.lld
 
 BUILD_DIR = $(shell pwd)/build
+DRIVERS_INCLUDE_DIR = $(shell pwd)/drivers/include
 PUB_INCLUDE_DIR = $(shell pwd)/include
+MM_INCLUDE_DIR = $(shell pwd)/mm/include
+
 LIMINE_DIR = /usr/local/share/limine
 CONFIG_DIR = $(BUILD_DIR)/config
 
@@ -21,7 +24,7 @@ endif
 CFLAGS = $(COMMON_FLAGS) $(ARCH_FLAGS) --target=$(TARGET)
 CXXFLAGS = $(CFLAGS) -fno-exceptions -fno-rtti
 
-export ARCH CC CXX LD BUILD_DIR CFLAGS CXXFLAGS PUB_INCLUDE_DIR
+export ARCH CC CXX LD BUILD_DIR CFLAGS CXXFLAGS PUB_INCLUDE_DIR MM_INCLUDE_DIR
 
 KERNEL_NAME = kafka-kernel-$(ARCH)
 KERNEL_BIN = $(BUILD_DIR)/$(KERNEL_NAME)
