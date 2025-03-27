@@ -9,8 +9,9 @@ namespace kfk
 {
     /* please do not call this */
     template<typename Arch>
-    struct cpu_traits
+    class cpu_traits
     {
+    public:
         /* initialize CPU, add */
         static void init(volatile limine_hhdm_request* hhdm) noexcept;
 

@@ -254,9 +254,7 @@ namespace kfk
 	{
 		/* initialize all handlers to default */
 		for (auto &handler: handlers)
-		{
 			handler = default_handler;
-		}
 
 		/* set up exception handlers */
 		set_idt_entry(vint_to_vector[EXCEPTION_PAGE_FAULT], reinterpret_cast<void *>(page_fault_handler));
@@ -269,10 +267,9 @@ namespace kfk
 		{
 			if (i != EXCEPTION_PAGE_FAULT && i != EXCEPTION_GENERAL_PROTECTION && i != EXCEPTION_DOUBLE_FAULT &&
 				i != 15)
-			{ /* 15 is reserved */
-
+			{ 
+				/* 15 is reserved */
 				uint8_t vector = vint_to_vector[i];
-
 				if (i == EXCEPTION_DOUBLE_FAULT || i == EXCEPTION_INVALID_TSS || i == EXCEPTION_SEG_NOT_PRESENT ||
 					i == EXCEPTION_STACK_FAULT || i == EXCEPTION_GENERAL_PROTECTION || i == EXCEPTION_PAGE_FAULT ||
 					i == EXCEPTION_ALIGNMENT_CHECK)
@@ -290,8 +287,6 @@ namespace kfk
 
 		/* load the idt */
 		asm volatile("lidt %0" : : "m"(idt_descriptor));
-
-		/* kfk::kprintf("idt initialized\n"); */
 	}
 
 	void interrupt_traits<x86_64>::enable(uint16_t n) noexcept
@@ -299,14 +294,7 @@ namespace kfk
 		uint8_t x86vector = to_vector(static_cast<Vint>(n));
 		if (x86vector >= 32 && x86vector < 48)
 		{
-			/* unmask the irq in the pic */
-			uint16_t port = (x86vector < 40) ? 0x21 : 0xA1;
-			uint8_t bit = (x86vector < 40) ? (x86vector - 32) : (x86vector - 40);
-
-			uint8_t mask;
-			asm volatile("in %1, %0" : "=a"(mask) : "d"(port));
-			mask &= ~(1 << bit); /* clear bit to enable the irq */
-			asm volatile("out %0, %1" : : "a"(mask), "d"(port));
+			/* TODO: enable the IRQ */
 		}
 	}
 
@@ -315,14 +303,7 @@ namespace kfk
 		uint8_t x86vector = to_vector(static_cast<Vint>(n));
 		if (x86vector >= 32 && x86vector < 48)
 		{
-			/* mask the irq in the pic */
-			uint16_t port = (x86vector < 40) ? 0x21 : 0xA1;
-			uint8_t bit = (x86vector < 40) ? (x86vector - 32) : (x86vector - 40);
-
-			uint8_t mask;
-			asm volatile("in %1, %0" : "=a"(mask) : "d"(port));
-			mask |= (1 << bit); /* set bit to disable the irq */
-			asm volatile("out %0, %1" : : "a"(mask), "d"(port));
+			/* TODO: mask the IRQ in the pic */
 		}
 	}
 

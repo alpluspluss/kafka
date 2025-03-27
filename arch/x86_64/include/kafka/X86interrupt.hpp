@@ -8,8 +8,9 @@
 namespace kfk
 {
 	template<>
-	struct interrupt_traits<x86_64>
+	class interrupt_traits<x86_64>
 	{
+	public:
 		static void init() noexcept;
 
 		static void enable(uint16_t n) noexcept;

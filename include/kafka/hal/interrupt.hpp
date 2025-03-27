@@ -85,8 +85,9 @@ namespace kfk
 
 	/* please do not call this */
 	template<typename Arch>
-	struct interrupt_traits
+	class interrupt_traits
 	{
+	public:
 		static void init() noexcept;
 
 		static void enable(uint16_t n) noexcept; /* enable an interrupt  */

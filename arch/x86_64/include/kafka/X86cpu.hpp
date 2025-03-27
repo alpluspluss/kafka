@@ -8,8 +8,9 @@
 namespace kfk
 {
     template<>
-    struct cpu_traits<x86_64>
+    class cpu_traits<x86_64>
     {
+	public:
         static void init(volatile limine_hhdm_request* hhdm) noexcept;
 
 		/* CPU utils */
