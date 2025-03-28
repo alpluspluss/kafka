@@ -1,6 +1,10 @@
 /* this file is a part of Kafka kernel which is under MIT license; see LICENSE for more info */
 
+#include <bitmap.hpp>
 #include <limine.h>
+#include <list.hpp>
+#include <string.hpp>
+#include <unordered_map.hpp>
 #include <kafka/heap.hpp>
 #include <kafka/pmem.hpp>
 #include <kafka/hal/cpu.hpp>
@@ -32,6 +36,14 @@ namespace
     volatile LIMINE_REQUESTS_END_MARKER;
 }
 
+struct TestItem 
+{
+    int value;
+    kfk::Node node;
+    
+    TestItem(int v) : value(v) {}
+};
+
 extern "C" void kernel_main()
 {
     if (LIMINE_BASE_REVISION_SUPPORTED == false)
@@ -48,6 +60,7 @@ extern "C" void kernel_main()
     
     kfk::cpu::init(hhdm_offset);
     kfk::interrupt::init();
+
 
     kfk::cpu::pause();
     kfk::cpu::halt();
