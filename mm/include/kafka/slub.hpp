@@ -20,6 +20,8 @@ namespace kfk
         static void free(void* ptr);
         
         static SlubCache* get_cache_for_size(size_t size);
+
+        static void use_dynamic() noexcept;
         
     private:
         static void init_small_caches();
