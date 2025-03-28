@@ -1,8 +1,6 @@
 /* this file is a part of Kafka kernel which is under MIT license; see LICENSE for more info */
 
 #include <bitmap.hpp>
-#include <iostream.hpp>
-#include <kafka/fb.hpp>
 #include <kafka/hal/cpu.hpp>
 #include <kafka/hal/interrupt.hpp>
 #include <kafka/hal/vmem.hpp>
@@ -33,7 +31,6 @@ namespace
 
 	__attribute__((used, section(".limine_requests_end"))) volatile LIMINE_REQUESTS_END_MARKER;
 }
-
 
 extern "C" void kernel_main()
 {
