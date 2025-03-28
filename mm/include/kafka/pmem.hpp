@@ -13,6 +13,10 @@ namespace kfk
         static uintptr_t pmalloc(uint64_t n = 1) noexcept;
 
         static void pfree(uintptr_t base, uint64_t n = 1) noexcept;
+
+        static void* phys_to_virt(uintptr_t phys) noexcept;
+
+        static void dynamic_mode() noexcept;
     };
     
     using pmm = PhysicalPageManager;

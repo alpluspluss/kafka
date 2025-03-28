@@ -48,16 +48,20 @@ extern "C" void kernel_main()
 	if (!hhdm_offset)
 		kfk::cpu::halt();
 
-
-	/* early init */
+	/* for debug */
 	kfk::fb::init(framebuffer_requests.response->framebuffers[0]);
 	kfk::clear();
 
+	/* bootstrap */
 	if (bool res = kfk::pmm::init(&memmap_request, hhdm_offset); !res)
 		kfk::cpu::halt();
 
 	kfk::vmm::init(hhdm_offset);
 	kfk::heap::init();
+
+	/* self-host the dynamic allocation */
+	kfk::pmm::dynamic_mode();
+	/* TODO: vmm dynamic self-host */
 
 	kfk::cpu::init(hhdm_offset);
 	kfk::interrupt::init();
