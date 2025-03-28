@@ -1,9 +1,11 @@
 /* this file is a part of Kafka kernel which is under MIT license; see LICENSE for more info */
 
 #include <kafka/X86interrupt.hpp>
+#include <kafka/X86cpu.hpp>
 #include <kafka/hal/cpu.hpp>
 #include <kafka/types.hpp>
 #include <stdint.h>
+#include <iostream.hpp>
 
 namespace kfk
 {
@@ -151,7 +153,7 @@ namespace kfk
 			/* get interrupt vector from context (which is the frame) */
 			InterruptFrame *frame = static_cast<InterruptFrame *>(context);
 			/* log unhandled interrupt */
-			/* kfk::kprintf("unhandled interrupt at rip: 0x%lx\n", frame->ip); */
+			kfk::printf("unhandled interrupt at rip: %lx\n", frame->ip);
 		}
 
 		/* trampoline functions to get interrupt number */
@@ -197,40 +199,39 @@ namespace kfk
 		/* exception handlers */
 		__attribute__((interrupt)) static void page_fault_handler(InterruptFrame *frame, uint64_t error)
 		{
-			uint64_t fault_addr;
-			asm volatile("mov %%cr2, %0" : "=r"(fault_addr));
+			uint64_t fault_addr = cpu_traits<x86_64>::read_cr3();
 
-			/* kfk::kprintf("page fault at 0x%lx (", fault_addr);
+			kfk::printf("page fault at %p (", fault_addr);
 			if (error & (1 << 0))
-				kfk::kprintf("protection violation, ");
+				kfk::print("protection violation");
 			else
-				kfk::kprintf("non-present page, ");
+				kfk::print("non-present page");
 
 			if (error & (1 << 1))
-				kfk::kprintf("write, ");
+				kfk::print(", write");
 			else
-				kfk::kprintf("read, ");
+				kfk::print(", read");
 
 			if (error & (1 << 2))
-			    kfk::kprintf("user, ");
+			    kfk::print(", user");
 			else
-				kfk::kprintf("kernel, ");
+				kfk::print(", kernel");
 
-			kfk::kprintf(")\n"); */
+			kfk::println(")");
 
 			cpu_traits<x86_64>::halt();
 		}
 
 		__attribute__((interrupt)) static void general_protection_handler(InterruptFrame *frame, uint64_t error)
 		{
-			/* kfk::kprintf("general protection fault! error code: 0x%lx at rip: 0x%lx\n",
-				   error, frame->ip); */
+			kfk::printf("general protection fault! error code: 0x%lx at rip: %p\n",
+				   error, frame->ip);
 			cpu_traits<x86_64>::halt();
 		}
 
 		__attribute__((interrupt)) static void double_fault_handler(InterruptFrame *frame, uint64_t)
 		{
-			/* kfk::printf("double fault at rip: 0x%lx\n", frame->ip); */
+			kfk::printf("double fault at rip: 0x%lx\n", frame->ip);
 			cpu_traits<x86_64>::halt();
 		}
 

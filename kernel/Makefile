@@ -19,7 +19,7 @@ OBJS = $(CPP_OBJS) $(C_OBJS)
 
 MM_OBJS = $(shell find $(MM_OBJ_DIR) -name "$(ARCH)-*.o")
 ARCH_OBJS = $(shell find $(ARCH_LIB_OBJ_DIR) -name "$(ARCH)-*.o")
-DRIVER_OBJS = $(shell find $(DRIVERS_OBJ_DIR) -name "$(ARCH)-*.o")
+DRIVER_OBJS = $(shell find $(DRIVERS_OBJ_DIR) -name "*.o")
 
 INCLUDES = -I$(INC_DIR) -I$(PUB_INCLUDE_DIR) -I$(MM_INCLUDE_DIR)
 LDFLAGS = -T $(CURDIR)/../arch/$(ARCH)/linker.ld -nostdlib
