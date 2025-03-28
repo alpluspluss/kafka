@@ -12,7 +12,7 @@ MM_INCLUDE_DIR = $(shell pwd)/mm/include
 LIMINE_DIR = /usr/local/share/limine
 CONFIG_DIR = $(BUILD_DIR)/config
 
-COMMON_FLAGS = -ffreestanding -O3
+COMMON_FLAGS = -ffreestanding -O2
 ifeq ($(ARCH),x86_64)
     TARGET = x86_64-none-elf
     ARCH_FLAGS = -march=x86-64 -mcmodel=kernel -mgeneral-regs-only -mno-red-zone

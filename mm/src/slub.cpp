@@ -1,49 +1,12 @@
 /* this file is a part of Kafka kernel which is under MIT license; see LICENSE for more info */
 
+#include <string.hpp>
 #include <kafka/slub.hpp>
 #include <kafka/hal/vmem.hpp>
+#include "iostream.hpp"
 
 namespace kfk
 {
-	namespace
-	{
-		void *memset(void *s, const int c, size_t count)
-		{
-			auto *xs = static_cast<uint8_t *>(s);
-			const auto b = static_cast<uint8_t>(c);
-			if (count < 8)
-			{
-				while (count--)
-					*xs++ = b;
-				return s;
-			}
-
-			/* align to word boundary */
-			size_t align = -reinterpret_cast<uintptr_t>(xs) & (sizeof(size_t) - 1);
-			count -= align;
-			while (align--)
-				*xs++ = b;
-
-			/* make word-sized pattern */
-			size_t pattern = (b << 24) | (b << 16) | (b << 8) | b;
-			pattern = (pattern << 32) | pattern;
-
-			auto *xw = reinterpret_cast<size_t *>(xs);
-			while (count >= sizeof(size_t))
-			{
-				*xw++ = pattern;
-				count -= sizeof(size_t);
-			}
-
-			/* fill the remaining bytes */
-			xs = reinterpret_cast<uint8_t *>(xw);
-			while (count--)
-				*xs++ = b;
-
-			return s;
-		}
-	}
-
 	static constexpr size_t SMALL_SIZES_COUNT = 8;
 	static constexpr size_t MEDIUM_SIZES_COUNT = 8;
 	static constexpr size_t LARGE_SIZES_COUNT = 6;
@@ -188,6 +151,7 @@ namespace kfk
 
 			/* map pages with kernel read-write permissions */
 			uintptr_t memory = vmm::map_page(pages);
+			kfk::printf("%x", memory);
 			if (memory == 0)
 				return nullptr;
 
@@ -268,7 +232,7 @@ namespace kfk
 		return slab;
 	}
 
-	void *SlubCache::allocate(size_t n)
+	void *SlubCache::allocate(size_t n) /* how many slubs to allocate */
 	{
 		size_t total_size = n * obj_size;
 		if (n > 1 && total_size > obj_size)

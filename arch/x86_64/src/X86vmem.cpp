@@ -7,48 +7,11 @@
 #include <kafka/X86vmem.hpp>
 #include <kafka/hal/cpu.hpp>
 #include <kafka/hal/vmem.hpp>
+#include <iostream.hpp>
+#include <string.hpp>
 
 namespace kfk
 {
-    namespace 
-    {
-        void* memset(void *s, const int c, size_t count)
-        {
-            auto *xs = static_cast<uint8_t *>(s);
-            const auto b = static_cast<uint8_t>(c);
-            if (count < 8)
-            {
-                while (count--)
-                    *xs++ = b;
-                return s;
-            }
-    
-            /* align to word boundary */
-            size_t align = -reinterpret_cast<uintptr_t>(xs) & (sizeof(size_t) - 1);
-            count -= align;
-            while (align--)
-                *xs++ = b;
-    
-            /* make word-sized pattern */
-            size_t pattern = (b << 24) | (b << 16) | (b << 8) | b;
-            pattern = (pattern << 32) | pattern;
-    
-            auto *xw = reinterpret_cast<size_t *>(xs);
-            while (count >= sizeof(size_t))
-            {
-                *xw++ = pattern;
-                count -= sizeof(size_t);
-            }
-    
-            /* fill the remaining bytes */
-            xs = reinterpret_cast<uint8_t *>(xw);
-            while (count--)
-                *xs++ = b;
-    
-            return s;
-        }
-    }
-
     static uint64_t hhdm_offset = 0;
     static uint64_t *kernel_pml4 = nullptr;
     static const VmmFlags KERNEL_FLAGS_NEW = KERNEL_RW;
@@ -202,7 +165,7 @@ namespace kfk
             return 0;
 
         const uintptr_t phys_addr = pmm::pmalloc(n);
-        if (phys_addr == 0)
+        if (!phys_addr)
             return 0; /* failed to allocate */
 
         const uintptr_t virt_addr = find_free_region(n * PAGE_SIZE);
@@ -226,7 +189,7 @@ namespace kfk
 
     void vmm_traits<x86_64>::map_page_internal(uintptr_t virt_addr, uintptr_t phys_addr, uint64_t flags) noexcept
     {
-        /* calculate indices for each level */
+        /* compute indices for each level */
         const size_t pml4_index = (virt_addr >> 39) & 0x1FF;
         const size_t pdpt_index = (virt_addr >> 30) & 0x1FF;
         const size_t pd_index = (virt_addr >> 21) & 0x1FF;
