@@ -3,6 +3,7 @@
 #pragma once
 
 #include <atomic.hpp>
+#include <types.hpp>
 #include <type_traits.hpp>
 #include <utilities.hpp>
 #include <kafka/heap.hpp>
@@ -205,5 +206,234 @@ namespace kfk
         }
         
         return UniquePtr<T[]>(ptr);
+    }
+
+    template<typename T, typename Deleter>
+    class ControlBlock
+    {
+    public:
+        using DestroyFn = void(*)(void*, T*, Deleter&);
+
+        ControlBlock(T* ptr, const Deleter& del, DestroyFn destroy_fn) noexcept
+            : ref_count(1), ptr(ptr), deleter(del), destroy(destroy_fn) {}
+        
+        void increment() noexcept
+        {
+            ref_count.store(ref_count.load(MemoryOrder::ACQUIRE) + 1, MemoryOrder::RELEASE);
+        }
+        
+        bool decrement() noexcept
+        {
+            return ref_count.exchange(ref_count.load(MemoryOrder::ACQUIRE) - 1, MemoryOrder::ACQUIRE) == 1;
+        }
+
+        Atomic<int> ref_count;
+        T* ptr;
+        Deleter deleter;
+        DestroyFn destroy; /* function pointer to destroy managed object */
+    };
+
+    template<typename T>
+    class SharedPtr
+    {
+    public:
+        constexpr SharedPtr() noexcept : ptr(nullptr), ctrl(nullptr) {}
+
+        template<typename U, typename Deleter = DefaultDeleter<U>>
+        explicit SharedPtr(U* ptr, const Deleter& deleter = Deleter())
+            : ptr(ptr), ctrl(nullptr)
+        {
+            if (ptr)
+            {
+                static auto destroy_fn = [](void* block, U* ptr, Deleter& deleter) {
+                    deleter(ptr);
+                    heap::free(block);
+                };
+
+                /* allocate the control block */
+                void* block = heap::allocate(sizeof(ControlBlock<U, Deleter>));
+                if (!block) /* failure!!!! */
+                {
+                    deleter(ptr);
+                    ptr = nullptr;
+                    return;
+                }
+
+                ctrl = new (block) ControlBlock<U, Deleter>(ptr, deleter, destroy_fn);
+            }
+        }
+
+        SharedPtr(SharedPtr&& other) noexcept : ptr(other.ptr), ctrl(other.ctrl)
+        {
+            other.ptr = nullptr;
+            other.ctrl = nullptr;
+        }
+
+        SharedPtr& operator=(const SharedPtr& other) noexcept
+        {
+            if (this != &other)
+            {
+                reset();
+                ptr = other.ptr;
+                ctrl = other.ctrl;
+                if (ctrl)
+                    ctrl = get_ctrl()->increment();
+            }
+            return *this;
+        }
+
+        SharedPtr& operator=(SharedPtr&& other) noexcept
+        {
+            if (this != &other)
+            {
+                reset();
+                ptr = other.ptr;
+                ctrl = other.ctrl;
+                other.ptr = nullptr;
+                other.ctrl = nullptr;
+            }
+            return *this;
+        }
+
+        ~SharedPtr() noexcept
+        {
+            reset();
+        }
+        
+        [[nodiscard]] T* get() const noexcept 
+        { 
+            return ptr; 
+        }
+        
+        T& operator*() const noexcept 
+        { 
+            return *ptr; 
+        }
+
+        T* operator->() const noexcept 
+        { 
+            return ptr;
+        }
+        
+        explicit operator bool() const noexcept
+        { 
+            return ptr != nullptr; 
+        }
+        
+        void reset() noexcept
+        {
+            if (ctrl && get_ctrl()->decrement())
+            {
+                void* block = ctrl;
+                get_ctrl()->destroy(block, get_ctrl()->ptr, get_ctrl()->deleter);
+            }
+            ptr = nullptr;
+            ctrl = nullptr;
+        }
+        
+        /* for db/tests */
+        long use_count() const noexcept
+        {
+            return ctrl ? get_ctrl()->ref_count.load(MemoryOrder::ACQUIRE) : 0;
+        }
+        
+        void swap(SharedPtr& other) noexcept
+        {
+            kfk::swap(ptr, other.ptr);
+            kfk::swap(ctrl, other.ctrl);
+        }
+    
+    private:
+        T* ptr;
+        void* ctrl; /* note: the implementation uses void* to avoid template fuckery */
+
+        template<typename U, typename D>
+        [[nodiscard]] ControlBlock<U, D>* get_ctrl() const noexcept
+        {
+            return static_cast<ControlBlock<U, D>*>(ctrl);
+        }
+    };
+
+    template<typename T, typename... Args>
+    SharedPtr<T> make_shared(Args&&... args)
+    {
+        T* ptr = nullptr;
+        void* mem = heap::allocate(sizeof(T));
+        if (mem)
+            ptr = new (mem) T(forward<Args>(args)...);
+        
+        return SharedPtr<T>(ptr);
+    }
+
+    template<typename T, typename U>
+    bool operator==(const UniquePtr<T>& lhs, const UniquePtr<U>& rhs) noexcept
+    {
+        return lhs.get() == rhs.get();
+    }
+
+    template<typename T, typename U>
+    bool operator!=(const UniquePtr<T>& lhs, const UniquePtr<U>& rhs) noexcept
+    {
+        return lhs.get() != rhs.get();
+    }
+
+    template<typename T>
+    bool operator==(const UniquePtr<T>& ptr, nullptr_t) noexcept
+    {
+        return ptr.get() == nullptr;
+    }
+
+    template<typename T>
+    bool operator==(nullptr_t, const UniquePtr<T>& ptr) noexcept
+    {
+        return ptr.get() == nullptr;
+    }
+
+    template<typename T>
+    bool operator!=(const UniquePtr<T>& ptr, nullptr_t) noexcept
+    {
+        return ptr.get() != nullptr;
+    }
+
+    template<typename T>
+    bool operator!=(nullptr_t, const UniquePtr<T>& ptr) noexcept
+    {
+        return ptr.get() != nullptr;
+    }
+
+    template<typename T, typename U>
+    bool operator==(const SharedPtr<T>& lhs, const SharedPtr<U>& rhs) noexcept
+    {
+        return lhs.get() == rhs.get();
+    }
+
+    template<typename T, typename U>
+    bool operator!=(const SharedPtr<T>& lhs, const SharedPtr<U>& rhs) noexcept
+    {
+        return lhs.get() != rhs.get();
+    }
+
+    template<typename T>
+    bool operator==(const SharedPtr<T>& ptr, nullptr_t) noexcept
+    {
+        return ptr.get() == nullptr;
+    }
+
+    template<typename T>
+    bool operator==(nullptr_t, const SharedPtr<T>& ptr) noexcept
+    {
+        return ptr.get() == nullptr;
+    }
+
+    template<typename T>
+    bool operator!=(const SharedPtr<T>& ptr, nullptr_t) noexcept
+    {
+        return ptr.get() != nullptr;
+    }
+
+    template<typename T>
+    bool operator!=(nullptr_t, const SharedPtr<T>& ptr) noexcept
+    {
+        return ptr.get() != nullptr;
     }
 }
