@@ -4,7 +4,7 @@
 
 #include <allocator.hpp>
 
-namespace kfk 
+namespace policy
 {
-    void enable_dynamic_allocation() noexcept;
+    void dynamic_alloc() noexcept;
 }

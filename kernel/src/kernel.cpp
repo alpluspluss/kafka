@@ -6,12 +6,13 @@
 #include <list.hpp>
 #include <string.hpp>
 #include <unordered_map.hpp>
+#include <kafka/fb.hpp>
+#include <kafka/heap.hpp>
+#include <kafka/pmem.hpp>
+#include <kernel/policy.hpp>
 #include <kafka/hal/cpu.hpp>
 #include <kafka/hal/interrupt.hpp>
 #include <kafka/hal/vmem.hpp>
-#include <kafka/heap.hpp>
-#include <kafka/pmem.hpp>
-#include <kafka/fb.hpp>
 
 namespace
 {
@@ -59,9 +60,8 @@ extern "C" void kernel_main()
 	kfk::vmm::init(hhdm_offset);
 	kfk::heap::init();
 
-	/* self-host the dynamic allocation */
-	kfk::pmm::dynamic_mode();
-	/* TODO: vmm dynamic self-host */
+	/* use dynamic allocation policy */
+	policy::dynamic_alloc();
 
 	kfk::cpu::init(hhdm_offset);
 	kfk::interrupt::init();

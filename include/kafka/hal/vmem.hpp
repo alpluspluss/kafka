@@ -88,6 +88,8 @@ namespace kfk
         static void unmap_page(uintptr_t virt_addr) noexcept;
         
         static uintptr_t get_pmaddr(uintptr_t virt_addr) noexcept;
+
+        static void dynamic_mode() noexcept;
         
         /* page table operations for proc mm */
         static uintptr_t create_ptb() noexcept;

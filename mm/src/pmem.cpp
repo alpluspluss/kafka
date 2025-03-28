@@ -50,30 +50,24 @@ namespace kfk
             return 0;
             
         const size_t size = n * PAGE_SIZE;
-        
-        /* Find best fit region */
         Region* region = RegionManager::find_best_fit(size);
         if (!region)
-            return 0; /* No suitable region found */
+            return 0;
             
         const uintptr_t alloc_base = region->base;
         
         if (region->len == size)
         {
-            /* Exact size match - just mark as used */
             region->set_free(false);
         }
         else
         {
-            /* Split the region */
             if (!RegionManager::split(region, size))
-                return 0; /* Failed to split region */
+                return 0;
                 
-            /* Mark the first part as used */
             region->set_free(false);
         }
         
-        /* Zero out the allocated memory */
         constexpr size_t CACHE_LINE = 64;
         auto* ptr = reinterpret_cast<volatile uint8_t*>(alloc_base + hhdm_offset);
         
@@ -92,33 +86,26 @@ namespace kfk
             return;
             
         const size_t size = n * PAGE_SIZE;
-        
-        /* Find the region with this base address */
         Region* region = RegionManager::find(base);
         if (!region || region->is_free())
-            return; /* Not found or already free */
+            return;
             
         if (region->len == size)
         {
-            /* Exact match - just mark as free */
             region->set_free(true);
         }
         else if (size < region->len)
         {
-            /* Partial free - split the region */
             if (!RegionManager::split(region, size))
-                return; /* Failed to split */
+                return;
                 
-            /* First part becomes free */
             region->set_free(true);
         }
         else
         {
-            /* Trying to free more than allocated - ignore */
             return;
         }
         
-        /* Merge with adjacent free regions */
         RegionManager::merge_adjacent();
     }
 

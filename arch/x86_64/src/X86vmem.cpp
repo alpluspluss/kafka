@@ -1,14 +1,16 @@
 /* this file is a part of Kafka kernel which is under MIT license; see LICENSE for more info */
 
 #include <stdint.h>
+#include <allocator.hpp>
+#include <iostream.hpp>
+#include <string.hpp>
+#include <kafka/slub.hpp>
 #include <kafka/types.hpp>
 #include <kafka/pmem.hpp>
 #include <kafka/X86cpu.hpp>
 #include <kafka/X86vmem.hpp>
 #include <kafka/hal/cpu.hpp>
 #include <kafka/hal/vmem.hpp>
-#include <iostream.hpp>
-#include <string.hpp>
 
 namespace kfk
 {
@@ -26,29 +28,27 @@ namespace kfk
     static constexpr size_t PAGE_TABLE_ENTRIES = 512;
     
     static constexpr size_t MAX_REGIONS = 64;
-    static MemoryRegion regions[MAX_REGIONS];
+    using VmmAllocator = kfk::Allocator<AllocPolicy::SWITCHABLE, MAX_REGIONS * sizeof(MemoryRegion)>;
+
+    static VmmAllocator region_alloc;
+    static MemoryRegion* regions = nullptr;
     static size_t region_count = 0;
 
     static uintptr_t find_free_region(size_t size)
     {
         for (size_t i = 0; i < region_count; i++)
         {
+            /* found a region large enough */
             if (!regions[i].used && (regions[i].end - regions[i].start >= size))
             {
-                /* found a region large enough */
                 uintptr_t addr = regions[i].start;
-
-                /* split the region if it's larger than needed */
-                if (regions[i].end - regions[i].start > size)
+                if (regions[i].end - regions[i].start > size)  /* split the region if it's larger than needed */
                 {
                     /* create new region for the remainder */
                     if (region_count < MAX_REGIONS)
                     {
-                        /* shift other regions */
-                        for (size_t j = region_count; j > i + 1; j--)
-                        {
+                        for (size_t j = region_count; j > i + 1; j--) /* shift other regions */
                             regions[j] = regions[j - 1];
-                        }
 
                         /* insert new region */
                         regions[i + 1] = {
@@ -63,7 +63,7 @@ namespace kfk
                     }
                 }
 
-                /* mark region as used */
+                /* mark as used */
                 regions[i].used = true;
                 return addr;
             }
@@ -86,9 +86,7 @@ namespace kfk
                 if (i + 1 < region_count && !regions[i + 1].used && regions[i].end == regions[i + 1].start)
                 {
                     regions[i].end = regions[i + 1].end;
-
-                    /* remove merged region */
-                    for (size_t j = i + 1; j < region_count - 1; j++)
+                    for (size_t j = i + 1; j < region_count - 1; j++) /* remove merged region */
                         regions[j] = regions[j + 1];
                     region_count--;
                 }
@@ -97,15 +95,10 @@ namespace kfk
                 if (i > 0 && !regions[i - 1].used && regions[i - 1].end == regions[i].start)
                 {
                     regions[i - 1].end = regions[i].end;
-
-                    /* remove merged region */
-                    for (size_t j = i; j < region_count - 1; j++)
-                    {
+                    for (size_t j = i; j < region_count - 1; j++) /* remove merged region */
                         regions[j] = regions[j + 1];
-                    }
                     region_count--;
                 }
-
                 break;
             }
         }
@@ -115,7 +108,7 @@ namespace kfk
     {
         uint64_t native_flags = 0;
         
-        // In x86_64, presence is implied by read
+        /* implied as READ */
         if (static_cast<uint64_t>(flags) & static_cast<uint64_t>(VmmFlags::PROT_READ))
             native_flags |= x86_64_internal::VMM_PRESENT;
             
@@ -147,7 +140,13 @@ namespace kfk
 
     void vmm_traits<x86_64>::init(uint64_t offset) noexcept
     {
+        if (regions != nullptr)
+            return;
+
         hhdm_offset = offset;
+        regions = static_cast<MemoryRegion*>(region_alloc.allocate(64 * sizeof(MemoryRegion)));
+        if (!regions)
+            return;
 
         /* get the current PML4 from CR3 */
         kernel_pml4 = reinterpret_cast<uint64_t *>(cpu_traits<x86_64>::read_cr3() + hhdm_offset);
@@ -255,11 +254,8 @@ namespace kfk
             pt = reinterpret_cast<uint64_t *>((pde & ~0xFFF) + hhdm_offset);
         }
 
-        /* set the page table entry */
-        pt[pt_index] = phys_addr | flags;
-
-        /* invalidate TLB for this page */
-        cpu_traits<x86_64>::invlpg(reinterpret_cast<void *>(virt_addr));
+        pt[pt_index] = phys_addr | flags; /* set the page table entry */
+        cpu_traits<x86_64>::invlpg(reinterpret_cast<void *>(virt_addr)); /* invalidate TLB for this page */
     }
 
     void vmm_traits<x86_64>::unmap_page(uintptr_t virt_addr) noexcept
@@ -368,6 +364,12 @@ namespace kfk
         return (pt[pt_index] & ~0xFFF) + (virt_addr & 0xFFF);
     }
 
+    void vmm_traits<x86_64>::dynamic_mode() noexcept
+    {
+        Slub::init(); /* note: no side effect if SLUB is already initialized before hand */
+        region_alloc.use_dynamic();
+    }
+
     uintptr_t vmm_traits<x86_64>::create_ptb() noexcept
     {
         /* allocate physical memory for new PML4 */
@@ -382,6 +384,7 @@ namespace kfk
 
         /* copy kernel entries (typically higher half) */
         /* for x86_64, kernel space usually starts at entry 256 */
+        /* NOTE: add ASLR here */
         for (size_t i = 256; i < PAGE_TABLE_ENTRIES; i++)
             new_pml4[i] = kernel_pml4[i];
 

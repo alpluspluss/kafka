@@ -42,6 +42,8 @@ namespace kfk
 
         static uintptr_t get_pmaddr(uintptr_t virt_addr) noexcept;
 
+        static void dynamic_mode() noexcept;
+
         static uintptr_t create_ptb() noexcept;
 
         static void switch_ptb(uintptr_t ptb_phys) noexcept;
