@@ -1,15 +1,17 @@
 /* this file is a part of Kafka kernel which is under MIT license; see LICENSE for more info */
 
+#include <limine.h>
 #include <bitmap.hpp>
+#include <iostream.hpp>
+#include <list.hpp>
+#include <string.hpp>
+#include <unordered_map.hpp>
 #include <kafka/hal/cpu.hpp>
 #include <kafka/hal/interrupt.hpp>
 #include <kafka/hal/vmem.hpp>
 #include <kafka/heap.hpp>
 #include <kafka/pmem.hpp>
-#include <limine.h>
-#include <list.hpp>
-#include <string.hpp>
-#include <unordered_map.hpp>
+#include <kafka/fb.hpp>
 
 namespace
 {
@@ -52,9 +54,7 @@ extern "C" void kernel_main()
 	kfk::clear();
 
 	if (bool res = kfk::pmm::init(&memmap_request, hhdm_offset); !res)
-	{
 		kfk::cpu::halt();
-	}
 
 	kfk::vmm::init(hhdm_offset);
 	kfk::heap::init();

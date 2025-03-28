@@ -29,3 +29,6 @@ similar problems.
 There isn't much about kafka yet as it is one of my newly development project and definitely 
 will take a significant amount of effort on my end to complete the kernel. Therefore, 
 please do not expect the project to be fully completed or bug-free.
+
+Currently, kafka has memory management, CPU initialization, and a few containers implemented. 
+The scodebase is around 2,000 LOC without resources; relatively low compared to other kernels out there.
