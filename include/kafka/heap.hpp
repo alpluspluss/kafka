@@ -29,4 +29,6 @@ namespace kfk
             Slub::free(ptr);
         }
     };
+
+    using heap = Heap;
 }
