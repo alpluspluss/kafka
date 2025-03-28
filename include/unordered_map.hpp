@@ -5,7 +5,6 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <utilities.hpp>
-#include "iostream.hpp"
 
 namespace kfk
 {
@@ -29,17 +28,14 @@ namespace kfk
             if ((sz + 1) * 100 > capacity * 75)
                 resize(capacity * 2);
 
-            size_t index = kfk::hash(key);
+            size_t index = kfk::hash(key) % capacity;
             int8_t dist = 0;
 
             K k = key;
             V v = value;
 
-            while (true) /* Robin Hood insertion */
+            while (true) /* robin hood insertion */
             {
-                kfk::println("trying to write to dynamically allocated area");
-                entries[index].occupied = false;
-                kfk::println("initialized memory?");
                 if (!entries[index].occupied)
                 {
                     entries[index].key = k;
@@ -72,7 +68,7 @@ namespace kfk
 
         [[nodiscard]] bool contains(const K& key, V* out_value = nullptr) const noexcept
         {
-            size_t index = kfk::hash(key);
+            size_t index = kfk::hash(key) % capacity;
             int8_t dist = 0;
 
             while (true)
@@ -87,7 +83,7 @@ namespace kfk
                 if (entries[index].key == key)
                 {
                     if (out_value)
-                        out_value = entries[index].value;
+                        *out_value = entries[index].value;
 
                     return true;
                 }
@@ -99,7 +95,7 @@ namespace kfk
 
         bool remove(const K& key) noexcept
         {
-            size_t index = kfk::hash(key);
+            size_t index = kfk::hash(key) % capacity;
             int8_t dist = 0;
 
             while (true)
@@ -128,11 +124,12 @@ namespace kfk
                         index = next;
                         next = (next + 1) % capacity;
                     }
+                    return true;
                 }
-                return true;
+                
+                index = (index + 1) % capacity;
+                dist++;
             }
-            index = (index + 1) % capacity;
-            dist++;
         }
 
         [[nodiscard]] size_t size() const noexcept
@@ -160,22 +157,30 @@ namespace kfk
 
         void resize(size_t new_capacity)
         {
-            UnorderedMap<K, V> new_map;
-            new_map.capacity = new_capacity;
-            new_map.entries = new Entry[new_capacity]();
+            /* allocate new array */
+            Entry* new_entries = new Entry[new_capacity]();
             
-            for (size_t i = 0; i < capacity; ++i)
+            /* store old values */
+            Entry* old_entries = entries;
+            size_t old_capacity = capacity;
+            
+            /* update to new array */
+            entries = new_entries;
+            size_t old_sz = sz;
+            sz = 0;
+            capacity = new_capacity;
+            
+            /* re-insert all entries */
+            for (size_t i = 0; i < old_capacity; ++i)
             {
-                if (entries[i].occupied)
+                if (old_entries[i].occupied)
                 {
-                    new_map.insert(entries[i].key, entries[i].value);
+                    insert(old_entries[i].key, old_entries[i].value);
                 }
             }
             
-            delete[] entries;
-            entries = new_map.entries;
-            capacity = new_map.capacity;
-            new_map.entries = nullptr; /* no double-free */
+            /* clean up */
+            delete[] old_entries;
         }
     };
 }

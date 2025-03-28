@@ -23,7 +23,7 @@ namespace kfk
     class List
     {
     public:
-        static T& container_of(Node* node)
+        static T* container_of(Node* node)
         {
             return reinterpret_cast<T*>(
                 reinterpret_cast<char*>(node) - 
@@ -77,7 +77,7 @@ namespace kfk
             
             T* operator*() const
             {
-                return container_of(node);
+                return List::container_of(node);
             }
             
             Iterator& operator++()
