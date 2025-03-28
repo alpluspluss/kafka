@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <utilities.hpp>
+#include "iostream.hpp"
 
 namespace kfk
 {
@@ -36,6 +37,9 @@ namespace kfk
 
             while (true) /* Robin Hood insertion */
             {
+                kfk::println("trying to write to dynamically allocated area");
+                entries[index].occupied = false;
+                kfk::println("initialized memory?");
                 if (!entries[index].occupied)
                 {
                     entries[index].key = k;

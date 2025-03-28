@@ -3,6 +3,7 @@
 #include <limine.h>
 #include <stdint.h>
 #include <stddef.h>
+#include <iostream.hpp>
 #include <kafka/pmem.hpp>
 
 namespace kfk
@@ -149,6 +150,16 @@ namespace kfk
 			}
 		}
 
+        // for (size_t i = 0; i < region_count; ++i)
+        // {
+        //     printf("  Region ");
+		// 	printf("%d", i);
+		// 	printf(": Base=%x", regions[i].base);
+		// 	printf(" Len=%x", regions[i].len);
+		// 	print(" ");
+		// 	println(regions[i].is_free ? "Free" : "Used");
+        // }
+
         return true;
     }
 
@@ -156,8 +167,9 @@ namespace kfk
     {
         /* for the best cache efficiency, find best-fit */
         const size_t size = n * PAGE_SIZE;
+        kfk::println();
         size_t best_index = region_count;
-        uint64_t smallest = sizeof(uint64_t);
+        uint64_t smallest = UINT64_MAX;
 
         for (size_t i = 0; i < region_count; ++i)
 		{

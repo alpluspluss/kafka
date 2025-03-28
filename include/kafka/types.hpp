@@ -11,6 +11,6 @@ namespace kfk
 #if defined(__x86_64__)
     using current_arch = x86_64;
 #else
-    using current_arch = aaraarch64;
+    using current_arch = aarch64;
 #endif
 }

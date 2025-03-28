@@ -153,7 +153,7 @@ namespace kfk
 			/* get interrupt vector from context (which is the frame) */
 			InterruptFrame *frame = static_cast<InterruptFrame *>(context);
 			/* log unhandled interrupt */
-			kfk::printf("unhandled interrupt at rip: %lx\n", frame->ip);
+			kfk::printf("unhandled interrupt at rip: %p\n", frame->ip);
 		}
 
 		/* trampoline functions to get interrupt number */
@@ -200,39 +200,26 @@ namespace kfk
 		__attribute__((interrupt)) static void page_fault_handler(InterruptFrame *frame, uint64_t error)
 		{
 			uint64_t fault_addr = cpu_traits<x86_64>::read_cr3();
-
-			kfk::printf("page fault at %p (", fault_addr);
-			if (error & (1 << 0))
-				kfk::print("protection violation");
-			else
-				kfk::print("non-present page");
-
-			if (error & (1 << 1))
-				kfk::print(", write");
-			else
-				kfk::print(", read");
-
-			if (error & (1 << 2))
-			    kfk::print(", user");
-			else
-				kfk::print(", kernel");
-
-			kfk::println(")");
+			kfk::printf("page fault at %p (%s%s%s)\n", 
+				fault_addr,
+				(error & 1) ? "protection violation" : "non-present page",
+				(error & 2) ? ", write" : ", read",
+				(error & 4) ? ", user" : ", kernel");
 
 			cpu_traits<x86_64>::halt();
 		}
 
 		__attribute__((interrupt)) static void general_protection_handler(InterruptFrame *frame, uint64_t error)
 		{
-			kfk::printf("general protection fault! error code: 0x%lx at rip: %p\n",
+			kfk::printf("general protection fault! error code: %x at rip: %p\n",
 				   error, frame->ip);
 			cpu_traits<x86_64>::halt();
 		}
 
 		__attribute__((interrupt)) static void double_fault_handler(InterruptFrame *frame, uint64_t)
 		{
-			kfk::printf("double fault at rip: 0x%lx\n", frame->ip);
-			cpu_traits<x86_64>::halt();
+			kfk::printf("double fault at rip: %p\n", frame->ip);
+			cpu_traits<x86_64>::halt(); /* you are cooked. */
 		}
 
 		/* set an idt entry */
